@@ -214,10 +214,14 @@ HashList::remove(uint64_t const key)
     LOGGER_TRACE("remove(%zu)", key);
     validate();
     auto [it, n] = extract(key);
+    if (n == nullptr) {
+        validate();
+        return false;
+    }
     map_.erase(it);
     std::free(n);
     validate();
-    return n != nullptr;
+    return true;
 }
 
 ListNode *

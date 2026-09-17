@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <optional>
 #include <unordered_map>
+#include <utility>
 
 using size_t = std::size_t;
 using uint64_t = std::uint64_t;
@@ -106,13 +107,18 @@ public:
     operator=(HashList const &) = delete;
 
     // This is required to be able to have a HashList as a value within
-    // std::map. It is called a 'move constructor".
-    HashList(HashList const &&src)
-        : map_(src.map_),
-          head_(src.head_),
-          tail_(src.tail_)
+    // std::map. Transfer ownership of the linked-list nodes and leave the
+    // source as a valid, empty list.
+    HashList(HashList &&src) noexcept
+        : map_(std::move(src.map_)),
+          head_(std::exchange(src.head_, nullptr)),
+          tail_(std::exchange(src.tail_, nullptr))
     {
+        src.map_.clear();
     }
+
+    HashList &
+    operator=(HashList &&) = delete;
 
     ListNodeIterator
     begin() const;

@@ -101,7 +101,7 @@ private:
     {
         CacheMetadata &m = map_.at(victim_key);
         uint64_t sz_bytes = m.size_;
-        uint64_t exp_tm = m.expiration_time_ms_;
+        double const exp_tm = m.expiration_time_ms_;
 
         // Update metadata tracking
         switch (cause) {
@@ -122,7 +122,6 @@ private:
         }
 
         size_bytes_ -= sz_bytes;
-        map_.erase(victim_key);
         lfu_cache_.remove(victim_key);
         if (cause == EvictionCause::MainCapacity) {
             lifetime_thresholds_.register_cache_eviction(
@@ -131,6 +130,7 @@ private:
                 current_access->timestamp_ms);
         }
         remove_multimap_kv(ttl_queue_, exp_tm, victim_key);
+        map_.erase(victim_key);
     }
 
     void
@@ -371,7 +371,7 @@ private:
     // Maps last access time to keys.
     HashList lfu_cache_;
     // Maps expiration time to keys.
-    std::multimap<uint64_t, uint64_t> ttl_queue_;
+    std::multimap<double, uint64_t> ttl_queue_;
 
     // Statistics related to cache performance.
     CacheStatistics statistics_;

@@ -104,6 +104,11 @@ private:
         case EvictionCause::ProactiveTTL:
             statistics_.ttl_expire(m.size_);
             break;
+        case EvictionCause::AccessExpired:
+            // Access-triggered expiry is lazy expiration, so record its
+            // lifetime separately from proactive TTL cleanup.
+            statistics_.lazy_expire(m.size_, m.ttl_ms(access.timestamp_ms));
+            break;
         case EvictionCause::NoRoom:
             statistics_.no_room_evict(m.size_, 0);
             break;

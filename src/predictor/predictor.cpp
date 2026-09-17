@@ -24,6 +24,7 @@
 #include "cpp_lib/progress_bar.hpp"
 #include "cpp_lib/util.hpp"
 #include "lib/predictive_lfu_ttl_cache.hpp"
+#include "lib/predictive_clock_ttl_cache.hpp"
 #include "logger/logger.h"
 
 #include "cpp_lib/cache_trace.hpp"
@@ -142,7 +143,7 @@ main(int argc, char *argv[])
         std::cout
             << "Usage: predictor <trace> <format> <lower_ratio [0.0, 1.0]> "
                "<upper_ratio [0.0, 1.0]> <cache-capacities>+ "
-               "<shards-ratio [0.0, 1.0]> <policy lru|lfu> "
+               "<shards-ratio [0.0, 1.0]> <policy lru|lfu|clock> "
             << std::endl;
         exit(1);
     }
@@ -176,6 +177,14 @@ main(int argc, char *argv[])
                                        upper_ratio,
                                        shards_ratio,
                                        show_progress);
+    } else if (policy == "clock") {
+        run_caches<PredictiveClockCache>(path,
+                                         format,
+                                         capacity_bytes,
+                                         lower_ratio,
+                                         upper_ratio,
+                                         shards_ratio,
+                                         show_progress);
     } else {
         LOGGER_ERROR("Unrecognized policy: '%s'", policy.c_str());
         return EXIT_FAILURE;
