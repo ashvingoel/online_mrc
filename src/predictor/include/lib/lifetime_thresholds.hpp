@@ -73,7 +73,7 @@ class LifeTimeThresholds {
         if (lower_ratio_ == upper_ratio_) {
             // The first bucket has no preceding bucket. Its lower-bound
             // sentinel is not a lifetime that can be averaged.
-            if (lower == -INFINITY) {
+            if (std::isinf(lower) && std::signbit(lower)) {
                 return {upper, upper};
             }
             double mean = (lower + upper) / 2;
