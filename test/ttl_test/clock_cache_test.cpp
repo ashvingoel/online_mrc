@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "cache/clock_cache.hpp"
 #include "logger/logger.h"
 #include "test/mytester.h"
 #include "trace/reader.h"
@@ -34,6 +35,23 @@ get_trace(char const *const filename, enum TraceFormat format)
     }
     return trace;
 }
+
+/// @brief  Check the plain ClockCache second-chance behavior directly.
+///         With capacity 2, accessing 1 again should let it survive when
+///         3 is inserted, so 2 should be evicted instead of 1.
+static bool
+plain_clock_second_chance_test()
+{
+    ClockCache cache(2);
+    cache.access_item({0, 1});
+    cache.access_item({1, 2});
+    cache.access_item({2, 1});
+    cache.access_item({3, 3});
+
+    cache.validate(0);
+    return cache.contains(1) && !cache.contains(2) && cache.contains(3);
+}
+
 
 /*******************************************************************************
  *  VALIDATION TESTING
@@ -175,6 +193,7 @@ trace_test(char const *const filename,
 int
 main(int argc, char *argv[])
 {
+    ASSERT_FUNCTION_RETURNS_TRUE(plain_clock_second_chance_test());
     std::vector<std::uint64_t> simple_trace = {0, 1, 2, 3, 0, 1, 2, 3, 4};
     std::vector<std::uint64_t> trace = {0, 1, 2, 3, 0, 1, 0, 2, 3, 4, 5, 6, 7};
     std::vector<std::uint64_t> src2_trace =

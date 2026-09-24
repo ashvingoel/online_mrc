@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 template <typename A, typename B, typename C>
 static void
@@ -103,10 +104,50 @@ test_refresh(bool const debug = false)
     return true;
 }
 
+static bool
+test_equal_ratio_first_bucket()
+{
+    using Samples = std::vector<uint64_t>;
+    for (auto const &[samples, expected] :
+         std::vector<std::pair<Samples, double>>{
+             {{0, 0, 0, 0, 0, 0, 10, 20, 30, 40}, 0},
+             {{10, 10, 10, 10, 10, 10, 20, 30, 40, 50}, 10},
+             {{0, 0, 0}, 0},
+             {{25}, 25},
+             {{10, 10, 10, 10, 10, 20, 20, 20, 20, 20}, 10}}) {
+        LifeTimeThresholds t(0.5, 0.5);
+        for (auto lifetime : samples) {
+            t.register_cache_eviction(lifetime, 1, 0);
+        }
+        for (int refresh = 0; refresh < 2; ++refresh) {
+            t.refresh_thresholds();
+            auto [lower, upper] = t.thresholds();
+            g_assert_cmpfloat(lower, ==, expected);
+            g_assert_cmpfloat(upper, ==, expected);
+        }
+    }
+
+    LifeTimeThresholds empty(0.5, 0.5);
+    empty.refresh_thresholds();
+    g_assert_cmpfloat(empty.thresholds().first, ==, INFINITY);
+    g_assert_cmpfloat(empty.thresholds().second, ==, INFINITY);
+    for (double ratio : {0.0, 1.0}) {
+        LifeTimeThresholds fixed(ratio, ratio);
+        fixed.register_cache_eviction(0, 1, 0);
+        fixed.refresh_thresholds();
+        double expected = ratio == 0.0 ? 0.0 : INFINITY;
+        g_assert_cmpfloat(fixed.thresholds().first, ==, expected);
+        g_assert_cmpfloat(fixed.thresholds().second, ==, expected);
+    }
+    return true;
+}
+
 int
 main()
 {
     bool r = 0;
+    r = test_equal_ratio_first_bucket();
+    assert(r);
     r = test_empty();
     assert(r);
     r = test_thresholds(false);
